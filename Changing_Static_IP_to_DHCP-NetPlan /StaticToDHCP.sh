@@ -31,7 +31,7 @@ echo -e "\n\n*******************************************************************
 echo -e "* * * * * * * Changing from static IP to DHCP address  * * * * * * * * * *\n"
 echo -e "**************************************************************************\n"
 
-if [ $find_file == $path_netplan ]
+if [ "$find_file" == "$path_netplan" ];
 then
 	sudo rm /etc/netplan/01-Network-Manager_all.yaml
 fi
