@@ -60,3 +60,53 @@ echo -e "[*] Waiting for Internet Connection\n"
 sleep 10
 echo -e "[+] successfully connected to DHCP \n"
 
+echo -e "\n***************************************************************************\n"
+echo -e "* * * * * * * * * * * Updating source repositories  * * * * * * * * * * * *\n"
+echo -e "***************************************************************************\n"
+
+TEXT_RESET='\e[0m'
+TEXT_YELLOW='\e[0;33m'
+TEXT_RED_B='\e[1;31m'
+sudo apt-get update
+
+echo -e $TEXT_YELLOW
+echo 'APT update finished...'
+echo -e $TEXT_RESET
+
+echo -e "\n***************************************************************************\n"
+echo -e "* * * * * * * * * * * * * * Upgrading Packages *  * * * * * * * * * * * *\n"
+echo -e "***************************************************************************\n"
+
+sudo apt-get upgrade
+
+echo -e $TEXT_YELLOW
+echo 'APT upgrade finished...'
+echo -e $TEXT_RESET
+
+echo -e "\n***************************************************************************\n"
+echo -e "* * * * * * * * * * * * * * Upgrading Distribution *  * * * * * * * * * * * *\n"
+echo -e "***************************************************************************\n"
+
+sudo apt-get dist-upgrade
+echo -e $TEXT_YELLOW
+echo 'APT distributive upgrade finished...'
+echo -e $TEXT_RESET
+
+echo -e "\n***************************************************************************\n"
+echo -e "* * * * * * * * * * * * * * Removing old Packages *  * * * * * * * * * * * *\n"
+echo -e "***************************************************************************\n"
+
+
+sudo apt-get autoremove
+echo -e $TEXT_YELLOW
+echo 'APT auto remove finished...'
+echo -e $TEXT_RESET
+
+if [ -f /var/run/reboot-required ]; then
+    echo -e $TEXT_RED_B
+    echo -e 'Reboot required! \n'
+    echo -e "Rebooting"
+    sudo reboot
+    echo -e $TEXT_RESET
+fi
+
