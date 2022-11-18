@@ -110,3 +110,9 @@ if [ -f /var/run/reboot-required ]; then
     echo -e $TEXT_RESET
 fi
 
+echo -e "\n***************************************************************************\n"
+echo -e "* * * * * * * * * * * * * * * * * * Kernel Update *  * * * * * * * * * * * *\n"
+echo -e "***************************************************************************\n"
+
+echo -e "[+] Finding Latest version of Kernel\n"
+

@@ -108,7 +108,7 @@ action_data=()
 }
 
 #####
-## helper functions
+## helper functions in Error Handling
 #####
 
 single_action () {
@@ -118,6 +118,7 @@ single_action () {
     }
 }
 
+#no Log generated
 log () {
     [ $quiet -eq 0 ] && echo "$@"
 }
@@ -270,16 +271,19 @@ done
 
 containsElement () {
   local e
+  echo "In Contain Element function: $1 and $e"
   for e in "${@:2}"; do [[ "$e" == "$1" ]] || [[ "$e" =~ $1- ]] && return 0; done
   return 1
 }
-
+#*******************************************************************************************************************
+#*************************************************** My Working Code************************************************
+#Download
 download () {
-    host=$1
-    uri=$2
+    host=$1             #Host as first arg
+    uri=$2              #uri as second arg
 
     if [ $use_https -eq 1 ]; then
-        $wget -q --save-headers --output-document - "https://$host$uri"
+        $wget -q --save-headers --output-document - "https://$host$uri"             #Actual Link
     else
         exec 3<>/dev/tcp/"$host"/80
         echo -e "GET $uri HTTP/1.0\r\nHost: $host\r\nConnection: close\r\n\r\n" >&3
@@ -288,8 +292,8 @@ download () {
 }
 
 monitor_progress () {
-    local msg=$1
-    local file=$2
+    local msg=$1        #message as first Arg
+    local file=$2       #File as seconf arg
 
     download_size=-1
     printf "%s: " "$msg"
@@ -301,23 +305,25 @@ monitor_progress () {
                 printf ' %d%% %s' 0 "$c"
                 printf '\b%.0s' {1..5}
             } || {
-                filesize=$(( $(du -b "$file" | cut -f1) + 0))
-                progress="$((200*filesize/download_size % 2 + 100*filesize/download_size))"
+                filesize=$(( $(du -b "$file" | cut -f1) + 0))                                   #get File Size
+                progress="$((200*filesize/download_size % 2 + 100*filesize/download_size))"     #get Progress
 
                 printf ' %s%% %s' "$progress" "$c"
                 length=$((4 + ${#progress}))
                 printf '\b%.0s' $(seq 1 $length)
             }
         }
-        sleep 1
+        sleep 1                         #update progress after 1 sec
     done; done) &
     monitor_pid=$!
 }
 
+# Kill Child process
 end_monitor_progress () {
     { kill $monitor_pid && wait $monitor_pid; printf '100%%   \n'; } 2>/dev/null
 }
 
+#not necessarry for me
 remove_http_headers () {
     file="$1"
     nr=0
@@ -338,8 +344,10 @@ remove_http_headers () {
     done
 }
 
+
+#loading local versions 
 load_local_versions() {
-    local version
+    local version                                               #local variable used to update enviromental variable LOCAL_VERSIONS
     if [ ${#LOCAL_VERSIONS[@]} -eq 0 ]; then
         IFS=$'\n'
         for pckg in $(dpkg -l linux-image-* | cut -d " " -f 3 | sort -V); do
@@ -354,14 +362,16 @@ load_local_versions() {
     fi
 }
 
+#sorting local versions
 latest_local_version() {
-    load_local_versions 1
+    load_local_versions 1                #calling local_load_version with argument 1 so that it get the latest version install on system
 
     if [ ${#LOCAL_VERSIONS[@]} -gt 0 ]; then
-        local sorted
+        local sorted                       #Sorting version
         mapfile -t sorted < <(echo "${LOCAL_VERSIONS[*]}" | tr ' ' '\n' | sort -t"." -k1V,3)
 
-        lv="${sorted[${#sorted[@]}-1]}"
+        lv="${sorted[${#sorted[@]}-1]}"             #Sorting versions
+        echo $lv
         echo "${lv/-[0-9][0-9][0-9][0-9][0-9][0-9]rc/-rc}"
     else
         echo "none"
@@ -369,6 +379,7 @@ latest_local_version() {
 }
 
 remote_html_cache=""
+
 parse_remote_versions() {
     local line
     while read -r line; do
@@ -387,7 +398,7 @@ parse_remote_versions() {
 }
 
 load_remote_versions () {
-    local line
+    local line              #have arg
 
     [[ -n "$2" ]] && {
       REMOTE_VERSIONS=()
@@ -396,7 +407,7 @@ load_remote_versions () {
     if [ ${#REMOTE_VERSIONS[@]} -eq 0 ]; then
         if [ -z "$remote_html_cache" ]; then
           [ -z "$1" ] && logn "Downloading index from $ppa_host"
-          remote_html_cache=$(download $ppa_host $ppa_index)
+          remote_html_cache=$(download $ppa_host $ppa_index)            #Calling Download Method
           [ -z "$1" ] && log
         fi
 
@@ -415,7 +426,7 @@ load_remote_versions () {
 }
 
 latest_remote_version () {
-    load_remote_versions 1 "$1"
+    load_remote_versions 1 "$1"                 #Calling lastest Remote Version Method and passing two
     echo "${REMOTE_VERSIONS[${#REMOTE_VERSIONS[@]}-1]}"
 }
 
@@ -433,45 +444,45 @@ guard_run_as_root () {
   fi  
 }
 
-# execute requested action
-case $run_action in
-    help)
-        echo "Usage: $0 -c|-l|-r|-u
+# # execute requested action
+# case $run_action in
+#     help)
+#         echo "Usage: $0 -c|-l|-r|-u
 
-Download & install the latest kernel available from $ppa_host$ppa_uri
+# Download & install the latest kernel available from $ppa_host$ppa_uri
 
-Arguments:
-  -c               Check if a newer kernel version is available
-  -i [VERSION]     Install kernel VERSION, see -l for list. You don't have to prefix
-                   with v. E.g. -i 4.9 is the same as -i v4.9. If version is
-                   omitted the latest available version will be installed
-  -l [SEARCH]      List locally installed kernel versions. If an argument to this
-                   option is supplied it will search for that
-  -r [SEARCH]      List available kernel versions. If an argument to this option
-                   is supplied it will search for that
-  -u [VERSION]     Uninstall the specified kernel version. If version is omitted,
-                   a list of max 10 installed kernel versions is displayed
-  -h               Show this message
+# Arguments:
+#   -c               Check if a newer kernel version is available
+#   -i [VERSION]     Install kernel VERSION, see -l for list. You don't have to prefix
+#                    with v. E.g. -i 4.9 is the same as -i v4.9. If version is
+#                    omitted the latest available version will be installed
+#   -l [SEARCH]      List locally installed kernel versions. If an argument to this
+#                    option is supplied it will search for that
+#   -r [SEARCH]      List available kernel versions. If an argument to this option
+#                    is supplied it will search for that
+#   -u [VERSION]     Uninstall the specified kernel version. If version is omitted,
+#                    a list of max 10 installed kernel versions is displayed
+#   -h               Show this message
 
-Optional:
-  -s, --signed         Only install signed kernel packages (not implemented)
-  -p, --path DIR       The working directory, .deb files will be downloaded into
-                       this folder. If omitted, the folder /tmp/$(basename "$0")/
-                       is used. Path is relative from \$PWD
-  -ll, --low-latency   Use the low-latency version of the kernel, only for amd64 & i386
-  -lpae, --lpae        Use the Large Physical Address Extension kernel, only for armhf
-  --snapdragon         Use the Snapdragon kernel, only for arm64
-  -do, --download-only Only download the deb files, do not install them
-  -ns, --no-signature  Do not check the gpg signature of the checksums file
-  -nc, --no-checksum   Do not check the sha checksums of the .deb files
-  -d, --debug          Show debug information, all internal command's echo their output
-  --rc                 Also include release candidates
-  --yes                Assume yes on all questions (use with caution!)
-"
-        exit 2
-        ;;
+# Optional:
+#   -s, --signed         Only install signed kernel packages (not implemented)
+#   -p, --path DIR       The working directory, .deb files will be downloaded into
+#                        this folder. If omitted, the folder /tmp/$(basename "$0")/
+#                        is used. Path is relative from \$PWD
+#   -ll, --low-latency   Use the low-latency version of the kernel, only for amd64 & i386
+#   -lpae, --lpae        Use the Large Physical Address Extension kernel, only for armhf
+#   --snapdragon         Use the Snapdragon kernel, only for arm64
+#   -do, --download-only Only download the deb files, do not install them
+#   -ns, --no-signature  Do not check the gpg signature of the checksums file
+#   -nc, --no-checksum   Do not check the sha checksums of the .deb files
+#   -d, --debug          Show debug information, all internal command's echo their output
+#   --rc                 Also include release candidates
+#   --yes                Assume yes on all questions (use with caution!)
+# "
+#         exit 2
+#         ;;
 
-    check)
+#     check)
         check_environment
 
         logn "Finding latest version available on $ppa_host"
@@ -498,7 +509,7 @@ Optional:
                 exit 1
             fi
         fi
-
+#********************************************************************************************************************************************
         # Check installed minor branch
         latest_minor_text=""
         latest_minor_notify=""
